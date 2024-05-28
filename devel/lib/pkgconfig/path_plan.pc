@@ -1,0 +1,8 @@
+prefix=/home/doldolmeng2/project2_ws/devel
+
+Name: path_plan
+Description: Description of path_plan
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

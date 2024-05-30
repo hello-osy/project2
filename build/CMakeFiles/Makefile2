@@ -54,6 +54,7 @@ CMAKE_BINARY_DIR = /home/doldolmeng2/project2_ws/build
 
 # The main recursive "all" target.
 all: gtest/all
+all: launch_file/all
 all: image_fuse/all
 all: imu_fuse/all
 all: path_plan/all
@@ -63,6 +64,7 @@ all: control/all
 
 # The main recursive "preinstall" target.
 preinstall: gtest/preinstall
+preinstall: launch_file/preinstall
 preinstall: image_fuse/preinstall
 preinstall: imu_fuse/preinstall
 preinstall: path_plan/preinstall
@@ -77,6 +79,7 @@ clean: CMakeFiles/clean_test_results.dir/clean
 clean: CMakeFiles/tests.dir/clean
 clean: CMakeFiles/download_extra_data.dir/clean
 clean: gtest/clean
+clean: launch_file/clean
 clean: image_fuse/clean
 clean: imu_fuse/clean
 clean: path_plan/clean
@@ -223,6 +226,24 @@ imu_fuse/preinstall:
 imu_fuse/clean:
 
 .PHONY : imu_fuse/clean
+
+#=============================================================================
+# Directory level rules for directory launch_file
+
+# Recursive "all" directory target.
+launch_file/all:
+
+.PHONY : launch_file/all
+
+# Recursive "preinstall" directory target.
+launch_file/preinstall:
+
+.PHONY : launch_file/preinstall
+
+# Recursive "clean" directory target.
+launch_file/clean: launch_file/CMakeFiles/_catkin_empty_exported_target.dir/clean
+
+.PHONY : launch_file/clean
 
 #=============================================================================
 # Directory level rules for directory path_plan
@@ -485,6 +506,33 @@ gtest: gtest/googletest/CMakeFiles/gtest.dir/rule
 gtest/googletest/CMakeFiles/gtest.dir/clean:
 	$(MAKE) -f gtest/googletest/CMakeFiles/gtest.dir/build.make gtest/googletest/CMakeFiles/gtest.dir/clean
 .PHONY : gtest/googletest/CMakeFiles/gtest.dir/clean
+
+#=============================================================================
+# Target rules for target launch_file/CMakeFiles/_catkin_empty_exported_target.dir
+
+# All Build rule for target.
+launch_file/CMakeFiles/_catkin_empty_exported_target.dir/all:
+	$(MAKE) -f launch_file/CMakeFiles/_catkin_empty_exported_target.dir/build.make launch_file/CMakeFiles/_catkin_empty_exported_target.dir/depend
+	$(MAKE) -f launch_file/CMakeFiles/_catkin_empty_exported_target.dir/build.make launch_file/CMakeFiles/_catkin_empty_exported_target.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/doldolmeng2/project2_ws/build/CMakeFiles --progress-num= "Built target _catkin_empty_exported_target"
+.PHONY : launch_file/CMakeFiles/_catkin_empty_exported_target.dir/all
+
+# Build rule for subdir invocation for target.
+launch_file/CMakeFiles/_catkin_empty_exported_target.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/doldolmeng2/project2_ws/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 launch_file/CMakeFiles/_catkin_empty_exported_target.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/doldolmeng2/project2_ws/build/CMakeFiles 0
+.PHONY : launch_file/CMakeFiles/_catkin_empty_exported_target.dir/rule
+
+# Convenience name for target.
+_catkin_empty_exported_target: launch_file/CMakeFiles/_catkin_empty_exported_target.dir/rule
+
+.PHONY : _catkin_empty_exported_target
+
+# clean rule for target.
+launch_file/CMakeFiles/_catkin_empty_exported_target.dir/clean:
+	$(MAKE) -f launch_file/CMakeFiles/_catkin_empty_exported_target.dir/build.make launch_file/CMakeFiles/_catkin_empty_exported_target.dir/clean
+.PHONY : launch_file/CMakeFiles/_catkin_empty_exported_target.dir/clean
 
 #=============================================================================
 # Target rules for target image_fuse/CMakeFiles/xycar_msgs_generate_messages_py.dir

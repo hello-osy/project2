@@ -1,2 +1,2 @@
-control:image_fuse:imu_fuse:path_plan
+control:image_fuse:imu_fuse:launch_file:path_plan
 -DCATKIN_DEVEL_PREFIX=/home/doldolmeng2/project2_ws/devel -DCMAKE_INSTALL_PREFIX=/home/doldolmeng2/project2_ws/install -G Unix Makefiles

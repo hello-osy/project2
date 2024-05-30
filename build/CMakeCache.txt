@@ -476,6 +476,12 @@ imu_fuse_DIR:PATH=/home/doldolmeng2/project2_ws/devel/share/imu_fuse/cmake
 //Value Computed by CMake
 imu_fuse_SOURCE_DIR:STATIC=/home/doldolmeng2/project2_ws/src/imu_fuse
 
+//Value Computed by CMake
+launch_file_BINARY_DIR:STATIC=/home/doldolmeng2/project2_ws/build/launch_file
+
+//Value Computed by CMake
+launch_file_SOURCE_DIR:STATIC=/home/doldolmeng2/project2_ws/src/launch_file
+
 //Path to a library.
 lib:FILEPATH=/opt/ros/noetic/lib/librospack.so
 
@@ -678,7 +684,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_NM
 CMAKE_NM-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=8
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=9
 //ADVANCED property for variable: CMAKE_OBJCOPY
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP

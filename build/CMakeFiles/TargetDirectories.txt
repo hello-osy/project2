@@ -35,6 +35,14 @@
 /home/doldolmeng2/project2_ws/build/gtest/googletest/CMakeFiles/test.dir
 /home/doldolmeng2/project2_ws/build/gtest/googletest/CMakeFiles/gtest_main.dir
 /home/doldolmeng2/project2_ws/build/gtest/googletest/CMakeFiles/gtest.dir
+/home/doldolmeng2/project2_ws/build/launch_file/CMakeFiles/install/strip.dir
+/home/doldolmeng2/project2_ws/build/launch_file/CMakeFiles/install/local.dir
+/home/doldolmeng2/project2_ws/build/launch_file/CMakeFiles/install.dir
+/home/doldolmeng2/project2_ws/build/launch_file/CMakeFiles/list_install_components.dir
+/home/doldolmeng2/project2_ws/build/launch_file/CMakeFiles/rebuild_cache.dir
+/home/doldolmeng2/project2_ws/build/launch_file/CMakeFiles/edit_cache.dir
+/home/doldolmeng2/project2_ws/build/launch_file/CMakeFiles/test.dir
+/home/doldolmeng2/project2_ws/build/launch_file/CMakeFiles/_catkin_empty_exported_target.dir
 /home/doldolmeng2/project2_ws/build/image_fuse/CMakeFiles/install/strip.dir
 /home/doldolmeng2/project2_ws/build/image_fuse/CMakeFiles/install.dir
 /home/doldolmeng2/project2_ws/build/image_fuse/CMakeFiles/list_install_components.dir

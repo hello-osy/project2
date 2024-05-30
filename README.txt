@@ -9,9 +9,14 @@ catkin_make
 
 설치부터
 
+# 5/30 carla_ctl 룰센서 on off 버전 릴리즈
+deb 파일 다운로드 후 다음 명령어로 설치
+sudo dpkg -i /path/to/new_version.deb
+
 # carla_ctl node 생성과 파라미터
 _rule_sensor_on:= 1/0 룰 센서 on/off
 - 새로 다운받은 버전에서 사용 가능
+
 rosrun carla_ctl carla_ctl \
 _camera_sensor_x:=0.0 \
 _camera_sensor_y:=1.8 \

@@ -21,7 +21,7 @@ https://youtu.be/zLAAEC7dE_4
 
 # 5/30 carla_ctl 룰센서 on off 버전 릴리즈
 - deb 파일 다운로드 후 다음 명령어로 설치
-sudo dpkg -i /path/to/new_version.deb
+sudo dpkg -i /path/to/ros-noetic-carla-ctl_0.0.0-0focal_amd64.deb
 
 _rule_sensor_on:= 1/0 룰 센서 on/off 기능 추가
 - 새로 다운받은 버전에서 사용 가능

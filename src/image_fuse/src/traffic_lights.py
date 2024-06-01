@@ -47,8 +47,8 @@ def image_callback(msg):
         roi_img_hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
 
         # 초록색이라고 정의할 색의 범위 설정
-        lower_green = np.array([0, 0, 0])
-        upper_green = np.array([255, 255, 255])
+        lower_green = np.array([35, 100, 100])
+        upper_green = np.array([85, 255, 255])
 
         # 정의된 색상 범위 내에 있는 픽셀을 추출하고 마스크 생성
         green_mask = cv2.inRange(roi_img_hsv, lower_green, upper_green)
@@ -58,8 +58,8 @@ def image_callback(msg):
         cv2.imshow("result", cv_image)
 
         # 초록불 검출
-        if cv2.countNonZero(green_mask) > 0:  # 이미지에 초록색이 있다면,
-            publish_green_light()
+        #if cv2.countNonZero(green_mask) > 0:  # 이미지에 초록색이 있다면,
+        #    publish_green_light()
 
         
         if cv2.waitKey(1) & 0xFF == 27:  # ESC 키를 누르면 종료

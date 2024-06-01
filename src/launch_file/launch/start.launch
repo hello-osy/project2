@@ -9,5 +9,6 @@
         <param name="_host" value="172.29.240.1"/>
         <param name="_rule_sensor_on" value="0"/>
     </node>
+    <!--node name="lane_detector_visualize" pkg="image_fuse" type="lane_detector_visualize.py" output="screen" /-->
     <node name="linear_velocity_visualize" pkg="imu_fuse" type="linear_velocity_visualize.py" output="screen" />
 </launch>

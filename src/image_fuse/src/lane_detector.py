@@ -25,13 +25,13 @@ class RoadLaneDetector:
         #어두운 흰색 차선을 감지하기 위한 흰색 범위 설정 (HSV)
         #색상, 채도, 명도
         lower_white = np.array([100, 0, 185]) 
-        upper_white = np.array([255, 255, 255])
+        upper_white = np.array([225, 225, 255])
         white_mask = cv2.inRange(img_hsv, lower_white, upper_white)
         
         white_image = cv2.bitwise_and(img_frame, img_frame, mask=white_mask)
         
         #이거 나중에 지울 것
-        #cv2.imshow("white_filtered", white_image)
+        cv2.imshow("white_filtered", white_image)
 
         return white_image
 
@@ -39,22 +39,24 @@ class RoadLaneDetector:
         height, width = img_edges.shape
         mask = np.zeros_like(img_edges)
 
-        # 위아래로 3등분했을 때, 가장 아랫쪽 영역에만 관심을 가지도록 설정
-        points = np.array([[
-            (0, height),  # 좌측 하단
-            (0, height * 2 // 3),  # 좌측 중간
-            (width, height * 2 // 3),  # 우측 중간
-            (width, height)  # 우측 하단
-        ]], dtype=np.int32)
+        # 사다리꼴의 아랫부분 12%를 제외한 영역 설정
+        lower_left = (0, int(height * 0.88))
+        upper_left = (int(width * 0.2), height * 2 // 3)
+        upper_right = (int(width * 0.8), height * 2 // 3)
+        lower_right = (width, int(height * 0.88))
 
+        points = np.array([[lower_left, upper_left, upper_right, lower_right]], dtype=np.int32)
         cv2.fillPoly(mask, points, 255)
+
         region_limited_image = cv2.bitwise_and(img_edges, mask)
-        #이거 나중에 지울 것
-        #cv2.imshow("region_limited", region_limited_image)
+        # 이거 나중에 지울 것
+        cv2.imshow("mask_region", mask)
+        cv2.imshow("region_limited", region_limited_image)
         return region_limited_image
 
     def hough_lines(self, img_mask):
-        return cv2.HoughLinesP(img_mask, 1, np.pi / 180, 20, minLineLength=10, maxLineGap=20)
+        #입력 이미지, 거리 해상도, 각도 해상도, 직선으로 판단되기 위한 최소한의 투표 수, 검출된 직선의 최소 길이, 직선으로 간주할 최대 간격
+        return cv2.HoughLinesP(img_mask, 1, np.pi / 180, 50, minLineLength=20, maxLineGap=30)
 
     def separate_lines(self, img_edges, lines):
         right_lines = []

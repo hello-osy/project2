@@ -8,9 +8,9 @@ from cv_bridge import CvBridge, CvBridgeError
 
 class RoadLaneDetector:
     def __init__(self):
-        self.poly_bottom_width = 0.85
-        self.poly_top_width = 0.07
-        self.poly_height = 0.4
+        self.poly_bottom_width = 0.85 #관심영역 선택할 때 필요한 값
+        self.poly_top_width = 0.07 #관심영역 선택할 때 필요한 값
+        self.poly_height = 0.4 #관심영역 선택할 때 필요한 값
         self.img_center = None
         self.left_detect = False
         self.right_detect = False
@@ -21,27 +21,37 @@ class RoadLaneDetector:
 
     def filter_colors(self, img_frame):
         img_hsv = cv2.cvtColor(img_frame, cv2.COLOR_BGR2HSV)
-        white_mask = cv2.inRange(img_frame, (200, 200, 200), (255, 255, 255))
-        yellow_mask = cv2.inRange(img_hsv, (10, 100, 100), (40, 255, 255))
-
+        
+        #어두운 흰색 차선을 감지하기 위한 흰색 범위 설정 (HSV)
+        #색상, 채도, 명도
+        lower_white = np.array([100, 0, 185]) 
+        upper_white = np.array([255, 255, 255])
+        white_mask = cv2.inRange(img_hsv, lower_white, upper_white)
+        
         white_image = cv2.bitwise_and(img_frame, img_frame, mask=white_mask)
-        yellow_image = cv2.bitwise_and(img_frame, img_frame, mask=yellow_mask)
+        
+        #이거 나중에 지울 것
+        cv2.imshow("white_filtered", white_image)
 
-        return cv2.addWeighted(white_image, 1.0, yellow_image, 1.0, 0.0)
+        return white_image
 
     def limit_region(self, img_edges):
         height, width = img_edges.shape
         mask = np.zeros_like(img_edges)
 
+        # 위아래로 3등분했을 때, 가장 아랫쪽 영역에만 관심을 가지도록 설정
         points = np.array([[
-            ((1 - self.poly_bottom_width) / 2 * width, height),
-            ((1 - self.poly_top_width) / 2 * width, height - self.poly_height * height),
-            (width - (1 - self.poly_top_width) / 2 * width, height - self.poly_height * height),
-            (width - (1 - self.poly_bottom_width) / 2 * width, height)
+            (0, height),  # 좌측 하단
+            (0, height * 2 // 3),  # 좌측 중간
+            (width, height * 2 // 3),  # 우측 중간
+            (width, height)  # 우측 하단
         ]], dtype=np.int32)
 
         cv2.fillPoly(mask, points, 255)
-        return cv2.bitwise_and(img_edges, mask)
+        region_limited_image = cv2.bitwise_and(img_edges, mask)
+        #이거 나중에 지울 것
+        cv2.imshow("region_limited", region_limited_image)
+        return region_limited_image
 
     def hough_lines(self, img_mask):
         return cv2.HoughLinesP(img_mask, 1, np.pi / 180, 20, minLineLength=10, maxLineGap=20)
@@ -139,7 +149,9 @@ def image_callback(msg, args):
             img_result = cv_image
 
         image_pub.publish(bridge.cv2_to_imgmsg(img_result, "bgr8"))
-        cv2.imshow("result", img_result)
+
+        #창 이름, 표시할 이미지
+        cv2.imshow("result", img_result) 
 
         if cv2.waitKey(1) == 27:
             rospy.signal_shutdown("ESC pressed")
@@ -152,9 +164,13 @@ def main():
     rospy.init_node('road_lane_detector')
     road_lane_detector = RoadLaneDetector()
 
-    bridge = CvBridge()
+    bridge = CvBridge() #CvBridge로 ROS 이미지 메시지와 OpenCV 이미지를 왔다갔다 할 수 있다.
     first_msg = rospy.wait_for_message('/usb_cam/image_raw', Image)
     cv_image = bridge.imgmsg_to_cv2(first_msg, "bgr8")
+
+    #창 이름, 표시할 이미지
+    #이거 나중에 지울 것
+    cv2.imshow("cv_input", cv_image) 
 
     codec = cv2.VideoWriter_fourcc(*'XVID')
     fps = 25.0
@@ -166,10 +182,14 @@ def main():
         return -1
 
     image_pub = rospy.Publisher('/usb_cam/image_raw', Image, queue_size=10)
+    
+    #구독할 토픽, 구독할 메시지의 타입, 메시지 수신했을때 호출할 콜백 함수, 콜백 함수에 추가로 전달할 인수들
     image_transport = rospy.Subscriber('/usb_cam/image_raw', Image, image_callback, (road_lane_detector, image_pub))
 
+    #result라는 이름의 창 생성
     cv2.namedWindow("result")
-    rospy.spin()
+    
+    rospy.spin() #현재 스레드에서 무한 루프를 실행해서 콜백함수가 호출될 수 있도록 대기함.
 
 
 if __name__ == '__main__':

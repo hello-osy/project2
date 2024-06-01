@@ -31,7 +31,7 @@ class RoadLaneDetector:
         white_image = cv2.bitwise_and(img_frame, img_frame, mask=white_mask)
         
         #이거 나중에 지울 것
-        cv2.imshow("white_filtered", white_image)
+        #cv2.imshow("white_filtered", white_image)
 
         return white_image
 
@@ -50,7 +50,7 @@ class RoadLaneDetector:
         cv2.fillPoly(mask, points, 255)
         region_limited_image = cv2.bitwise_and(img_edges, mask)
         #이거 나중에 지울 것
-        cv2.imshow("region_limited", region_limited_image)
+        #cv2.imshow("region_limited", region_limited_image)
         return region_limited_image
 
     def hough_lines(self, img_mask):
@@ -170,7 +170,7 @@ def main():
 
     #창 이름, 표시할 이미지
     #이거 나중에 지울 것
-    cv2.imshow("cv_input", cv_image) 
+    #cv2.imshow("cv_input", cv_image) 
 
     codec = cv2.VideoWriter_fourcc(*'XVID')
     fps = 25.0
@@ -181,7 +181,7 @@ def main():
         print("Cannot save the video.")
         return -1
 
-    image_pub = rospy.Publisher('/usb_cam/image_raw', Image, queue_size=10)
+    image_pub = rospy.Publisher('/lane_detector', Image, queue_size=10)
     
     #구독할 토픽, 구독할 메시지의 타입, 메시지 수신했을때 호출할 콜백 함수, 콜백 함수에 추가로 전달할 인수들
     image_transport = rospy.Subscriber('/usb_cam/image_raw', Image, image_callback, (road_lane_detector, image_pub))

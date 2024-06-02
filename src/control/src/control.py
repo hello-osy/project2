@@ -52,8 +52,15 @@ class CarController:
     def matching(self, x, input_min, input_max, output_min, output_max):
         return (x-input_min)*(output_max-output_min)/(input_max-input_min)+output_min #map()함수 정의.
 
-    def control_speed(self): #속도 제어 함수, 나중에 수정할 것.
-        #조향각이 커지면 속도를 좀 줄이고, 조향각이 작아지면 속도를 좀 빠르게 해주자
+    def control_speed(self, steering_angle): #속도 제어 함수, 나중에 수정할 것.
+        #조향각이 커지면 속도를 좀 줄이고, 조향각이 작아지면 속도를 좀 빠르게 해주자.
+        #비례적으로 속도를 조절합니다
+
+        max_speed=50 #이건 우리 마음대로
+        min_speed=20
+
+        speed = max_speed - (max_speed - min_speed) * (abs(steering_angle - 90) / 90.0)
+
         return speed
 
 #PID_controller = CarController(kp=3, ki=0.8, kd=0.7)
@@ -69,7 +76,7 @@ def image_callback(msg, args):
     theta = car_controller.steering_vanishing_point(msg.x)
     # PID 제어를 통해 각도 계산
     angle = car_controller.compute(theta, dt)
-    speed = car_controller.control_speed() #속도 제어 부분은 나중에 수정할 것
+    speed = car_controller.control_speed(angle) #속도 제어 부분은 나중에 수정할 것
     
     # 각도와 속도를 퍼블리시
     angle_pub.publish(angle)

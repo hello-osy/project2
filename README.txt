@@ -6,6 +6,9 @@
 - project_ws/src/launch_file/launch/start.launch 의 ip 값만 바꾼 다음에
   roslaunch launch_file start.launch 로 실행.
 
+- 해당 위치 하위 .py 파일에 실행 권한을 주는 법 
+  find . -type f -name "*.py" -exec chmod +x {} \;
+
 # 현재 roslaunch launch_file start.launch 로 실행되는 노드
   - carla_ctl
   - linear_velocity_visualize (현재속도)
@@ -29,6 +32,7 @@ sudo dpkg -i /path/to/ros-noetic-carla-ctl_0.0.0-0focal_amd64.deb
 # 6/1 
 - start.launch 파일 내용 변경했는데 둘 중 하나 실행 가능 한걸로 주석처리 지우고 실행
 - IP확인
+
 
 _rule_sensor_on:= 1/0 룰 센서 on/off 기능 추가
 - 새로 다운받은 버전에서 사용 가능

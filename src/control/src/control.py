@@ -13,7 +13,7 @@ WIDTH = 800
 LEGTH = 600
 
 class CarController:
-    def __init__(self, kp, ki, kd, msg):
+    def __init__(self, kp, ki, kd):
         self.kp = kp
         self.ki = ki
         self.kd = kd
@@ -31,13 +31,13 @@ class CarController:
 
     def start_green(self, msg):
         if msg.data:
-            self.current_speed = 50  # 녹색 신호일 때 속도 설정
+            self.speed = 50  # 녹색 신호일 때 속도 설정
 
     def set_velocity(self, msg):
-        self.current_speed = msg.data  # 현재 속도 업데이트
+        self.speed = msg.data  # 현재 속도 업데이트
 
     def set_orientation(self, msg):
-        self.current_angle = msg.data  # 현재 조향 업데이트
+        self.angle = msg.data  # 현재 조향 업데이트
 
     def steering_vanishing_point(self, x):
         standard_x = int(WIDTH/2)
@@ -72,10 +72,10 @@ def image_callback(msg, args):
     speed = car_controller.control_speed() #속도 제어 부분은 나중에 수정할 것
     
     # 각도와 속도를 퍼블리시
-    angle_pub.publish(car_controller.angle)
-    speed_pub.publish(car_controller.speed)
+    angle_pub.publish(angle)
+    speed_pub.publish(speed)
 
-def matching(x,input_min,input_max,output_min,output_max):  #x가 input_min과 input_max 사이에 있다면, 이를 output_min과 output_max 사이의 값으로 매핑합니다.
+def matching(x, input_min, input_max, output_min, output_max):  #x가 input_min과 input_max 사이에 있다면, 이를 output_min과 output_max 사이의 값으로 매핑합니다.
     return (x-input_min)*(output_max-output_min)/(input_max-input_min)+output_min #map()함수 정의.
 
 def main():

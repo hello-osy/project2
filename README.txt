@@ -23,5 +23,12 @@ https://youtu.be/zLAAEC7dE_4
 - deb 파일 다운로드 후 다음 명령어로 설치
 sudo dpkg -i /path/to/ros-noetic-carla-ctl_0.0.0-0focal_amd64.deb
 
+# 5/31 TOPIC 이름 변경
+- lane_detector 가 발행하는 topic name이 /usb_cam/image_raw -> /lane_detector
+
+# 6/1 
+- start.launch 파일 내용 변경했는데 둘 중 하나 실행 가능 한걸로 주석처리 지우고 실행
+- IP확인
+
 _rule_sensor_on:= 1/0 룰 센서 on/off 기능 추가
 - 새로 다운받은 버전에서 사용 가능

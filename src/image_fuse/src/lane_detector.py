@@ -1,8 +1,16 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+
+'''
+수정할 사항.
+왼쪽차선 좌표2개 오른쪽 차선좌표 2개. 총 4개의 좌표를 토픽에 담아서 보내야함.
+
+혹시 오류나면, 예전에 올린 버전으로 돌아갈 것.
+'''
 
 import cv2
 import numpy as np
 import rospy
+from std_msgs import Float32MultiArray
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
@@ -31,7 +39,7 @@ class RoadLaneDetector:
         white_image = cv2.bitwise_and(img_frame, img_frame, mask=white_mask)
         
         #이거 나중에 지울 것
-        cv2.imshow("white_filtered", white_image)
+        # cv2.imshow("white_filtered", white_image)
 
         return white_image
 
@@ -50,8 +58,8 @@ class RoadLaneDetector:
 
         region_limited_image = cv2.bitwise_and(img_edges, mask)
         # 이거 나중에 지울 것
-        cv2.imshow("mask_region", mask)
-        cv2.imshow("region_limited", region_limited_image)
+        # cv2.imshow("mask_region", mask)
+        # cv2.imshow("region_limited", region_limited_image)
         return region_limited_image
 
     def hough_lines(self, img_mask):
@@ -150,7 +158,10 @@ def image_callback(msg, args):
         else:
             img_result = cv_image
 
-        image_pub.publish(bridge.cv2_to_imgmsg(img_result, "bgr8"))
+        #image_pub.publish(bridge.cv2_to_imgmsg(img_result, "bgr8"))
+        msg = Float32MultiArray()
+        msg.data = lane #lane은 4개의 점이다.
+        image_pub.publish(msg)
 
         #창 이름, 표시할 이미지
         cv2.imshow("result", img_result) 
@@ -183,7 +194,8 @@ def main():
         print("Cannot save the video.")
         return -1
 
-    image_pub = rospy.Publisher('/lane_detector', Image, queue_size=10)
+    #image_pub = rospy.Publisher('/lane_detector', Image, queue_size=10) 이 부분 수정해야 함.
+    image_pub = rospy.Publisher('/lane_detector', Float32MultiArray, queue_size=10) #차선 정보를 담은 4개의 좌표를 보낸다.
     
     #구독할 토픽, 구독할 메시지의 타입, 메시지 수신했을때 호출할 콜백 함수, 콜백 함수에 추가로 전달할 인수들
     image_transport = rospy.Subscriber('/usb_cam/image_raw', Image, image_callback, (road_lane_detector, image_pub))

@@ -9,6 +9,13 @@
 - 해당 위치 하위 .py 파일에 실행 권한을 주는 법 
   find . -type f -name "*.py" -exec chmod +x {} \;
 
+- W: GPG error: https://cli.github.com/packages focal InRelease: The following signatures couldn't be verified because the public key is not available:       
+  NO_PUBKEY 23F3D4EA75716059
+  E: The repository 'https://cli.github.com/packages focal InRelease' is not signed.
+  위와 같은 오류 해결은 다음 명령어 치기
+  sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 23F3D4EA75716059
+
+
 # 현재 roslaunch launch_file start.launch 로 실행되는 노드
   - carla_ctl
   - linear_velocity_visualize (현재속도)

@@ -24,6 +24,9 @@
     - carla_ctl
     - linear_velocity_visualize (현재속도)
 
+# tar.gz 압축
+- tar cvzf 파일명.tar.gz <디렉토리 or 파일>
+
 # 도커 명령어
 
  - 도커 실행 확인 $ sudo systemctl status docker

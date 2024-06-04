@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import rospy
-from std_msgs.msg import Bool, Float64
+from std_msgs.msg import Bool, Float64, Float32MultiArray
 from xycar_msgs.msg import xycar_motor
 #from image_fuse_msgs.msg import Point
 import signal
@@ -35,12 +35,14 @@ class CarController:
     def start_green(self, msg, args):
         car_controller, motor = args
         rospy.loginfo("green accepted")
-        self.speed = 50  # 녹색 신호일 때 속도 설정
+        self.speed = 0.3  # 녹색 신호일 때 속도 설정
+        self.angle = 0
         msg = xycar_motor()
         msg.angle = self.angle
         msg.speed = self.speed
-        motor.publish(msg)
-
+        motor.publish(msg) 
+    
+        
     def set_velocity(self, msg):
         self.speed = msg.data  # 현재 속도 업데이트
 
@@ -73,15 +75,28 @@ class CarController:
 
 #PID_controller = CarController(kp=3, ki=0.8, kd=0.7)
 
-def image_callback(msg, args):
+def lane_callback(msg, args):
     car_controller, motor = args
 
-    # 목표 지점과 현재 위치의 차이를 계산 (여기서는 단순히 가정) --> 좌표 오차를 각도 오차로 변환해야함
-    # 목표 지점의 x 좌표를 거리 오차로 사용
+    #[(),(),(),()] 형태의 메시지임.
+    right_x1, right_x2, left_x1, left_x2, y1, y2= msg[0][0], msg[1][0], msg[2][0], msg[3][0], msg[0][1], msg[0][1]
+
+    m1 = (y2 - y1) / (right_x2 - right_x1)
+    m2 = (y2 - y1) / (left_x2 - left_x1)
     
+    b1 = y1 - m1 * right_x1
+    b2 = y1 - m2 * left_x1
+    
+    if m1 == m2:
+        return None  # 평행한 경우 교점이 없음
+    
+    #목표 지점의 x,y좌표
+    x_intersect = (b2 - b1) / (m1 - m2)
+    y_intersect = m1 * x_intersect + b1
+
     dt = 0.1  # 가정된 시간 간격, 실제로는 rospy.Time 사용해서 계산
 
-    theta = car_controller.steering_vanishing_point(msg.x)
+    theta = car_controller.steering_vanishing_point(x_intersect) #좌표 오차를 각도 오차로 변환함 
     # PID 제어를 통해 각도 계산
     angle = car_controller.compute(theta, dt)
     speed = car_controller.control_speed(angle) #속도 제어 부분은 나중에 수정할 것
@@ -97,20 +112,40 @@ def matching(x, input_min, input_max, output_min, output_max):  #x가 input_min�
 
 def main():
     rospy.init_node('control', anonymous=True)
-
-    # angle_error 구해야함 
-    #angle_error = matching(theta, -100, 100, -90, 90)
-    
-    # 각도 error -> pid 제어 output 
-    #angle = PID_Controller.compute(theta, dt) 
     
     car_controller=CarController(kp=3, ki=0.8, kd=0.7)
     # 토픽 이름, 메시지 타입, 메시지 큐 크기
     motor = rospy.Publisher('/xycar_motor', xycar_motor, queue_size=1)
-
+    
+    rate = rospy.Rate(10)
+    start_time = rospy.get_time()  # 노드가 시작된 시간을 기록합니다.
+    while not  rospy.is_shutdown():
+        motor_msg = xycar_motor()
+        current_time = rospy.get_time()
+        elapsed_time = current_time - start_time
+        print(elapsed_time)
+        if 12 > elapsed_time >= 8:
+            motor_msg.angle = -0.03
+            motor_msg.speed = 0.5
+        elif 18 > elapsed_time >= 14:
+            motor_msg.angle = 0.015
+            motor_msg.speed = 0.4
+        elif 35 > elapsed_time > 20:
+            motor_msg.angle = 0.0
+            motor_msg.speed = 0.8
+        elif elapsed_time > 35:
+            motor_msg.angle = -0.01
+            motor_msg.speed = 0.0
+        else:
+            motor_msg.angle = 0
+            motor_msg.speed = 0
+        motor.publish(motor_msg)
+        rate.sleep()
     # 토픽 이름, 메시지 타입, 콜백 함수
-    #rospy.Subscriber('/target_point', image_fuse_msgs/Point, image_callback, (car_controller, motor))
-    rospy.Subscriber('/green_light', Bool, car_controller.start_green, (car_controller, motor))
+    
+    #rospy.Subscriber('/target_point', image_fuse_msgs/Point, image_callback, (car_controller, motor)) 이거 대신 좌표4개를 받는 것으로 수정.
+    rospy.Subscriber('/lane_detector', Float32MultiArray, lane_callback, (car_controller, motor))
+    # rospy.Subscriber('/green_light', Bool, car_controller.start_green, (car_controller, motor))
     rospy.Subscriber('/velocity', Float64, car_controller.set_velocity)
     rospy.Subscriber('/orientation', Float64, car_controller.set_orientation)
 

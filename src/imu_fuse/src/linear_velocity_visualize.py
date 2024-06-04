@@ -70,6 +70,7 @@ def imu_callback(data):
 
     accel_x = data.linear_acceleration.x - initial_accel_x
     accel_y = data.linear_acceleration.y - initial_accel_y
+    print(data.linear_acceleration.x)
 
     integrate_acceleration([accel_x, accel_y], current_time - initial_time)
 

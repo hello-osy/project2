@@ -18,19 +18,93 @@ class RoadLaneDetector:
         self.right_m = None
         self.left_b = None
         self.right_b = None
+        
 
+        
     def filter_colors(self, img_frame):
+        def on_mouse(event, x, y, flags, param):
+            if event == cv2.EVENT_MOUSEMOVE:
+                hsv_image = param
+                h, s, v = hsv_image[y, x]
+                print(f"HSV: ({h}, {s}, {v})")
+                
+        
         img_hsv = cv2.cvtColor(img_frame, cv2.COLOR_BGR2HSV)
         
-        #어두운 흰색 차선을 감지하기 위한 흰색 범위 설정 (HSV)
-        #색상, 채도, 명도
-        lower_white = np.array([100, 0, 185]) 
-        upper_white = np.array([225, 225, 255])
-        white_mask = cv2.inRange(img_hsv, lower_white, upper_white)
+        # hsv 마우스 올리면 값이 터미널에 출력
+        # cv2.namedWindow('HSV Image')
+        # cv2.setMouseCallback('HSV Image', on_mouse, img_hsv)
+        # cv2.imshow("HSV Image",img_hsv)
+        # 블러처리 후 경계 추출
+        blurred_image = cv2.GaussianBlur(img_hsv, (5, 5), 0)
+        # cv2.imshow("blurred_image",blurred_image)
+        edges = cv2.Canny(blurred_image, 50, 150)
+        # cv2.imshow("edges",edges)
         
-        white_image = cv2.bitwise_and(img_frame, img_frame, mask=white_mask)
+        # 어두운 흰색 차선을 감지하기 위한 흰색 범위 설정 (HSV)
+        lower_white_dark1 = np.array([107, 40, 186])
+        upper_white_dark1 = np.array([113, 76, 215])
         
-        #이거 나중에 지울 것
+        lower_white_dark2 = np.array([111, 91, 85])
+        upper_white_dark2 = np.array([115, 120, 120])
+        
+        # 밝은 부분 (HSV)
+        lower_white_bright = np.array([13, 11, 180])
+        upper_white_bright = np.array([19, 39, 250])
+        
+        # 밝은 부분2 (HSV)
+        lower_white_bright2 = np.array([0, 0, 0])
+        upper_white_bright2 = np.array([0, 0, 0])
+        
+        # 밝은 곳에서 어두운 차선 1
+        lower_white_bright_dark_lane1 = np.array([111, 80, 120])
+        upper_white_bright_dark_lane1 = np.array([114, 103, 176])
+        
+        # 밝은 곳에서 어두운 차선 2
+        lower_white_bright_dark_lane2 = np.array([110, 65, 170])
+        upper_white_bright_dark_lane2 = np.array([114, 90, 190])
+        
+        # 밝은 곳에서 밝은 차선 2
+        lower_white_bright_bright_lane1 = np.array([0, 0, 0])
+        upper_white_bright_bright_lane1 = np.array([0, 0, 0])
+        
+        # 마지막 직진 구간 시작 차선
+        lower_white_last = np.array([0, 0, 0])
+        upper_white_last = np.array([0, 0, 0])
+
+
+        # 밝기가 변하는 부분 (HSV)
+        # lower_white_change = np.array([107, 80, 80])
+        # upper_white_change = np.array([120, 115, 154])
+        
+
+
+        white_mask_dark1 = cv2.inRange(img_hsv, lower_white_dark1, upper_white_dark1)
+        white_mask_dark2 = cv2.inRange(img_hsv, lower_white_dark2, upper_white_dark2)
+        white_mask_bright = cv2.inRange(img_hsv, lower_white_bright, upper_white_bright)
+        white_mask_bright2 = cv2.inRange(img_hsv, lower_white_bright2, upper_white_bright2)
+        white_mask_bright_dark_lane1 = cv2.inRange(img_hsv, lower_white_bright_dark_lane1, upper_white_bright_dark_lane1)
+        white_mask_bright_dark_lane2 = cv2.inRange(img_hsv, lower_white_bright_dark_lane2, upper_white_bright_dark_lane2)
+        white_mask_bright_bright_lane2 = cv2.inRange(img_hsv, lower_white_bright_bright_lane1, upper_white_bright_bright_lane1)
+        white_mask_last = cv2.inRange(img_hsv, lower_white_last, upper_white_last)
+        
+        
+        # 여러 마스크를 결합
+        white_mask = cv2.bitwise_or(white_mask_dark1, white_mask_dark2)
+        white_mask = cv2.bitwise_or(white_mask, white_mask_bright)
+        white_mask = cv2.bitwise_or(white_mask, white_mask_bright2)
+        white_mask = cv2.bitwise_or(white_mask, white_mask_bright_dark_lane1)
+        white_mask = cv2.bitwise_or(white_mask, white_mask_bright_dark_lane2)
+        white_mask = cv2.bitwise_or(white_mask, white_mask_bright_bright_lane2)
+        white_mask = cv2.bitwise_or(white_mask, white_mask_last)
+        # cv2.imshow("white_mask", white_mask)
+
+        edged_mask = cv2.bitwise_and(white_mask, edges)
+        # cv2.imshow("edged_mask", edged_mask)
+        
+        white_image = cv2.bitwise_and(img_frame, img_frame, mask=edged_mask)
+
+        # 이거 나중에 지울 것
         # cv2.imshow("white_filtered", white_image)
 
         return white_image
@@ -39,14 +113,30 @@ class RoadLaneDetector:
         height, width = img_edges.shape
         mask = np.zeros_like(img_edges)
 
-        # 사다리꼴의 아랫부분 12%를 제외한 영역 설정
-        lower_left = (0, int(height * 0.88))
-        upper_left = (int(width * 0.2), height * 2 // 3)
+        # 밑 부분 네모 설정
+        lower_left = (0, int(height * 0.98))
+        upper_left = (0, int(height * 0.90))
+        upper_right = (width, int(height * 0.90))
+        lower_right = (width, int(height * 0.98))
+        square = np.array([[lower_left, upper_left, upper_right, lower_right]], dtype=np.int32)
+        
+        # 사다리꼴의 아랫부분 8%를 제외한 영역 설정
+        lower_left = (0, int(height * 0.90))
+        upper_left = (int(width * 0.1), height * 2 // 3)
         upper_right = (int(width * 0.8), height * 2 // 3)
-        lower_right = (width, int(height * 0.88))
-
+        lower_right = (width, int(height * 0.90))
         points = np.array([[lower_left, upper_left, upper_right, lower_right]], dtype=np.int32)
+        
+        # 지울 부분의 영역
+        lower_left = (100, width)
+        upper_left = (width/2-100, height * 2 // 3)
+        upper_right = (width/2+100, height * 2 // 3)
+        lower_right = (700, width)
+        erase_points = np.array([[lower_left, upper_left, upper_right, lower_right]], dtype=np.int32)
+        
+        cv2.fillPoly(mask, square, 255)
         cv2.fillPoly(mask, points, 255)
+        cv2.fillPoly(mask, erase_points, 0)
 
         region_limited_image = cv2.bitwise_and(img_edges, mask)
         # 이거 나중에 지울 것
@@ -121,14 +211,13 @@ class RoadLaneDetector:
         return output
 
     def draw_line(self, img_input, lane):
-        poly_points = np.array([lane[2], lane[0], lane[1], lane[3]], dtype=np.int32)
         overlay = img_input.copy()
-        cv2.fillConvexPoly(overlay, poly_points, (0, 230, 30))
         cv2.addWeighted(overlay, 0.3, img_input, 0.7, 0, img_input)
-
-        cv2.line(img_input, lane[0], lane[1], (0, 255, 255), 5)
-        cv2.line(img_input, lane[2], lane[3], (0, 255, 255), 5)
-
+        for i in range(0, len(lane),2):
+            if i > 3:
+                cv2.line(img_input, lane[i], lane[i+1], (255, 125, 0), 5)
+            else:
+                cv2.line(img_input, lane[i], lane[i+1], (0, 255, 255), 5)
         return img_input
 
 
@@ -146,6 +235,11 @@ def image_callback(msg, args):
         if lines is not None:
             separated_lines = road_lane_detector.separate_lines(img_mask, lines)
             lane = road_lane_detector.regression(separated_lines, cv_image)
+            
+            # line1 = [(800,480), (530,350)]  # 우측 차선 바깥 경계
+            # line2 = [(710,600),(452,360)]    # 중앙선 우측 경계
+            # line3 = [(50,600),(280,364)]     # 중앙선 좌측 경계
+            # lane.extend(line1+line2+line3)
             img_result = road_lane_detector.draw_line(cv_image, lane)
         else:
             img_result = cv_image
@@ -189,7 +283,7 @@ def main():
     image_transport = rospy.Subscriber('/usb_cam/image_raw', Image, image_callback, (road_lane_detector, image_pub))
 
     #result라는 이름의 창 생성
-    cv2.namedWindow("result")
+    # cv2.namedWindow("result")
     
     rospy.spin() #현재 스레드에서 무한 루프를 실행해서 콜백함수가 호출될 수 있도록 대기함.
 

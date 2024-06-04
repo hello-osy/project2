@@ -10,7 +10,7 @@
 import cv2
 import numpy as np
 import rospy
-from std_msgs import Float32MultiArray
+from std_msgs.msg import Float32MultiArray
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
@@ -160,10 +160,12 @@ def image_callback(msg, args):
 
         #image_pub.publish(bridge.cv2_to_imgmsg(img_result, "bgr8"))
         msg = Float32MultiArray()
-        msg.data = lane #lane은 4개의 점이다.
+        msg.data = [lane[0][0], lane[1][0], lane[2][0], lane[3][0], lane[0][1], lane[1][1]] #lane은 4개의 점이다. 
+        #right_x1, right_x2, left_x1, left_x2, y1, y2를 순서대로 보낸 것임.
         image_pub.publish(msg)
 
         #창 이름, 표시할 이미지
+        #print("Showing result image")  # 디버깅 메시지 추가
         cv2.imshow("result", img_result) 
 
         if cv2.waitKey(1) == 27:

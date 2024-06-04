@@ -24,7 +24,10 @@
     - carla_ctl
     - linear_velocity_visualize (현재속도)
 
+# 도커 명령어
 
+ - 도커 실행 확인 $ sudo systemctl status docker
+ - 도커 실행 $ sudo systemctl start docker
 수동 주행 동영상 링크
 https://youtu.be/zLAAEC7dE_4
 

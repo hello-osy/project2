@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import rospy
 from sensor_msgs.msg import Image
+from std_msgs.msg import Float32MultiArray
 from cv_bridge import CvBridge, CvBridgeError
 
 class RoadLaneDetector:
@@ -120,14 +121,14 @@ class RoadLaneDetector:
         lower_right = (width, int(height * 0.98))
         square = np.array([[lower_left, upper_left, upper_right, lower_right]], dtype=np.int32)
         
-        # 사다리꼴의 아랫부분 8%를 제외한 영역 설정
+        # 밑 네모 부분 위에 사다리꼴정
         lower_left = (0, int(height * 0.90))
         upper_left = (int(width * 0.1), height * 2 // 3)
-        upper_right = (int(width * 0.8), height * 2 // 3)
+        upper_right = (int(width * 0.7), height * 2 // 3)
         lower_right = (width, int(height * 0.90))
         points = np.array([[lower_left, upper_left, upper_right, lower_right]], dtype=np.int32)
         
-        # 지울 부분의 영역
+        # 중간 부분 지울 부분의 영역
         lower_left = (100, width)
         upper_left = (width/2-100, height * 2 // 3)
         upper_right = (width/2+100, height * 2 // 3)
@@ -220,6 +221,50 @@ class RoadLaneDetector:
                 cv2.line(img_input, lane[i], lane[i+1], (0, 255, 255), 5)
         return img_input
 
+def find_intersection(line1, line2, line3, line4):
+    x1, y1, x2, y2, x3, y3, x4, y4 = *line1, *line2, *line3, *line4
+    
+    def line_params(x1, y1, x2, y2):
+        """두 점을 통해 직선의 기울기와 절편을 구하는 함수"""
+        if x2 - x1 == 0:  # 수직선의 경우
+            return float('inf'), x1
+        else:
+            m = (y2 - y1) / (x2 - x1)
+            b = y1 - m * x1
+            return m, b
+
+    m1, b1 = line_params(x1, y1, x2, y2)
+    m2, b2 = line_params(x3, y3, x4, y4)
+
+    if m1 == m2:  # 평행한 경우
+        return (0, 0)
+
+    if m1 == float('inf'):  # 첫 번째 직선이 수직선인 경우
+        x_intersect = b1
+        y_intersect = m2 * x_intersect + b2
+    elif m2 == float('inf'):  # 두 번째 직선이 수직선인 경우
+        x_intersect = b2
+        y_intersect = m1 * x_intersect + b1
+    else:
+        x_intersect = (b2 - b1) / (m1 - m2)
+        y_intersect = m1 * x_intersect + b1
+
+    if x_intersect < 0 or y_intersect < 0:
+        return (0, 0)
+
+    return (x_intersect, y_intersect)
+
+def draw_intersection(img, intersection):
+    if intersection != (0, 0):
+        cv2.circle(img, intersection, 5, (0, 0, 255), -1)  # 교점에 원을 그림
+        cv2.putText(img, f"({intersection[0]}, {intersection[1]})", 
+                    (intersection[0] + 10, intersection[1] - 10), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+    else:
+        cv2.putText(img, "No valid intersection", 
+                    (50, 50), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+    return img
 
 def image_callback(msg, args):
     road_lane_detector, image_pub = args
@@ -240,11 +285,21 @@ def image_callback(msg, args):
             # line2 = [(710,600),(452,360)]    # 중앙선 우측 경계
             # line3 = [(50,600),(280,364)]     # 중앙선 좌측 경계
             # lane.extend(line1+line2+line3)
+            # print(lane)
             img_result = road_lane_detector.draw_line(cv_image, lane)
+            intersection = tuple(map(int,find_intersection(*lane)))
+            # print(intersection)
+            img_result = draw_intersection(img_result, intersection)
+            array_msg = Float32MultiArray()
+            publishing_lane_data = []
+            if lane:
+                for cor in lane:
+                    tmp = list(cor)
+                    publishing_lane_data += tmp
+                array_msg.data = publishing_lane_data
+                image_pub.publish(array_msg)
         else:
             img_result = cv_image
-
-        image_pub.publish(bridge.cv2_to_imgmsg(img_result, "bgr8"))
 
         #창 이름, 표시할 이미지
         cv2.imshow("result", img_result) 
@@ -277,7 +332,7 @@ def main():
         print("Cannot save the video.")
         return -1
 
-    image_pub = rospy.Publisher('/lane_detector', Image, queue_size=10)
+    image_pub = rospy.Publisher('/lane_detector', Float32MultiArray, queue_size=10)
     
     #구독할 토픽, 구독할 메시지의 타입, 메시지 수신했을때 호출할 콜백 함수, 콜백 함수에 추가로 전달할 인수들
     image_transport = rospy.Subscriber('/usb_cam/image_raw', Image, image_callback, (road_lane_detector, image_pub))

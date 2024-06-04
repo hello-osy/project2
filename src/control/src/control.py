@@ -76,23 +76,47 @@ class CarController:
 #PID_controller = CarController(kp=3, ki=0.8, kd=0.7)
 
 def lane_callback(msg, args):
+    print(msg.data)
     car_controller, motor = args
 
-    #[(),(),(),()] 형태의 메시지임.
-    right_x1, right_x2, left_x1, left_x2, y1, y2= msg[0][0], msg[1][0], msg[2][0], msg[3][0], msg[0][1], msg[0][1]
+    #[right_x1, right_x2, left_x1, left_x2, y1, y2] 형태의 메시지임.
+    right_x1, right_x2, left_x1, left_x2, y1, y2= msg.data
+    #print(msg.data)
+    m1,m2=0,0
+    if (right_x1==right_x2):
+        m1 = car_controller.last_m1
+    else:
+        m1 = (y2 - y1) / (right_x2 - right_x1) #오른쪽 직선의 기울기 m1
 
-    m1 = (y2 - y1) / (right_x2 - right_x1)
-    m2 = (y2 - y1) / (left_x2 - left_x1)
+    if (left_x1==left_x2):
+        m2 = car_controller.last_m2
+    else:
+        m2 = (y2 - y1) / (left_x2 - left_x1) #왼쪽 직선의 기울기 m2
+
+    #m1 = (y2 - y1) / (right_x2 - right_x1) #오른쪽 직선의 기울기 m1
+    #m2 = (y2 - y1) / (left_x2 - left_x1) #왼쪽 직선의 기울기 m2
     
     b1 = y1 - m1 * right_x1
     b2 = y1 - m2 * left_x1
     
     if m1 == m2:
-        return None  # 평행한 경우 교점이 없음
+        #return None  # 평행한 경우 교점이 없음
+        x_intersect=car_controller.last_x_intersect
     
-    #목표 지점의 x,y좌표
-    x_intersect = (b2 - b1) / (m1 - m2)
-    y_intersect = m1 * x_intersect + b1
+    x_intersect = (b2 - b1) / (m1 - m2) #목표지점의 x좌표
+
+    if (car_controller.last_m1==0) and (car_controller.last_m2==0) and (car_controller.last_x_intersect==0): #맨 처음 실행할 때의 조건임.
+        car_controller.last_x_intersect = x_intersect
+        car_controller.last_m1 = m1
+        car_controller.last_m2 = m2
+    elif (abs(m1 - car_controller.last_m1) < 0.2) and (abs(m2 / car_controller.last_m2) < 0.2): #두 직선의 기울기 변화가 0.2보다 작은 경우
+        car_controller.last_x_intersect = x_intersect
+        car_controller.last_m1 = m1
+        car_controller.last_m2 = m2
+    else: #두 직선의 기울기 변화가 심한 경우, 값이 튄 것으로 판단함.
+        x_intersect = car_controller.last_x_intersect #값이 튀면 이전에 구해둔 x_intersect값을 활용함.
+
+    print(car_controller.last_m1, car_controller.last_m2, car_controller.last_x_intersect)
 
     dt = 0.1  # 가정된 시간 간격, 실제로는 rospy.Time 사용해서 계산
 
@@ -102,10 +126,10 @@ def lane_callback(msg, args):
     speed = car_controller.control_speed(angle) #속도 제어 부분은 나중에 수정할 것
     
     # 각도와 속도를 퍼블리시
-    msg = xycar_motor()
-    msg.angle = angle
-    msg.speed = speed
-    motor.publish(msg)
+    publish_msg = xycar_motor()
+    publish_msg.angle = angle
+    publish_msg.speed = speed
+    motor.publish(publish_msg)
 
 def matching(x, input_min, input_max, output_min, output_max):  #x가 input_min과 input_max 사이에 있다면, 이를 output_min과 output_max 사이의 값으로 매핑합니다.
     return (x-input_min)*(output_max-output_min)/(input_max-input_min)+output_min #map()함수 정의.
@@ -123,12 +147,12 @@ def main():
         motor_msg = xycar_motor()
         current_time = rospy.get_time()
         elapsed_time = current_time - start_time
-        print(elapsed_time)
+        # print(elapsed_time)
         if 12 > elapsed_time >= 8:
             motor_msg.angle = -0.03
             motor_msg.speed = 0.5
         elif 18 > elapsed_time >= 14:
-            motor_msg.angle = 0.015
+            motor_msg.angle = 0.017
             motor_msg.speed = 0.4
         elif 35 > elapsed_time > 20:
             motor_msg.angle = 0.0
@@ -143,7 +167,6 @@ def main():
         rate.sleep()
     # 토픽 이름, 메시지 타입, 콜백 함수
     
-    #rospy.Subscriber('/target_point', image_fuse_msgs/Point, image_callback, (car_controller, motor)) 이거 대신 좌표4개를 받는 것으로 수정.
     rospy.Subscriber('/lane_detector', Float32MultiArray, lane_callback, (car_controller, motor))
     # rospy.Subscriber('/green_light', Bool, car_controller.start_green, (car_controller, motor))
     rospy.Subscriber('/velocity', Float64, car_controller.set_velocity)

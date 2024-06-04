@@ -79,9 +79,8 @@ class CarController:
 def lane_callback(msg, args):
     car_controller, motor = args
 
-    #[(),(),(),()] 형태의 메시지임.
-    right_x1, right_x2, left_x1, left_x2, y1, y2= msg[0][0], msg[1][0], msg[2][0], msg[3][0], msg[0][1], msg[0][1]
-
+    #[right_x1, right_x2, left_x1, left_x2, y1, y2] 형태의 메시지임.
+    right_x1, right_x2, left_x1, left_x2, y1, y2= msg[0],msg[1],msg[2],msg[3],msg[4],msg[5]
     m1 = (y2 - y1) / (right_x2 - right_x1) #오른쪽 직선의 기울기 m1
     m2 = (y2 - y1) / (left_x2 - left_x1) #왼쪽 직선의 기울기 m2
     
@@ -113,10 +112,10 @@ def lane_callback(msg, args):
     speed = car_controller.control_speed(angle) #속도 제어 부분은 나중에 수정할 것
     
     # 각도와 속도를 퍼블리시
-    msg = xycar_motor()
-    msg.angle = angle
-    msg.speed = speed
-    motor.publish(msg)
+    publish_msg = xycar_motor()
+    publish_msg.angle = angle
+    publish_msg.speed = speed
+    motor.publish(publish_msg)
 
 def matching(x, input_min, input_max, output_min, output_max):  #x가 input_min과 input_max 사이에 있다면, 이를 output_min과 output_max 사이의 값으로 매핑합니다.
     return (x-input_min)*(output_max-output_min)/(input_max-input_min)+output_min #map()함수 정의.

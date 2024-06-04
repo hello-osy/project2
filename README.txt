@@ -15,10 +15,14 @@
   위와 같은 오류 해결은 다음 명령어 치기
   sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 23F3D4EA75716059
 
-
-# 현재 roslaunch launch_file start.launch 로 실행되는 노드
-  - carla_ctl
-  - linear_velocity_visualize (현재속도)
+- xycar_motor speed값 정리
+  1. speed는 1이나 50이나 같은 속도로 가속한다.(최고속도는 모르겠음)
+  2. speed 값에 최고 속도가 결정된다. (시작시 가속도도 달라진다)
+  3. speed 값은 0.2~1의 값에서 조종한다 (1이나 50이나 같은 가속도로 가속하는걸로 보아 1이상은 다 비슷하고 0.2보다 작으면 안움직임)
+  
+  # 현재 roslaunch launch_file start.launch 로 실행되는 노드
+    - carla_ctl
+    - linear_velocity_visualize (현재속도)
 
 
 수동 주행 동영상 링크

@@ -24,6 +24,9 @@ class CarController:
         self.last_error = 0
         self.speed = 0
         self.angle = 0
+        self.last_m1 = 0
+        self.last_m2 = 0
+        self.last_x_intersect = 0
 
     def compute(self, error, dt):
         """PID 제어 계산을 수행하고 조정된 제어 값을 반환."""
@@ -79,8 +82,8 @@ def lane_callback(msg, args):
     #[(),(),(),()] 형태의 메시지임.
     right_x1, right_x2, left_x1, left_x2, y1, y2= msg[0][0], msg[1][0], msg[2][0], msg[3][0], msg[0][1], msg[0][1]
 
-    m1 = (y2 - y1) / (right_x2 - right_x1)
-    m2 = (y2 - y1) / (left_x2 - left_x1)
+    m1 = (y2 - y1) / (right_x2 - right_x1) #오른쪽 직선의 기울기 m1
+    m2 = (y2 - y1) / (left_x2 - left_x1) #왼쪽 직선의 기울기 m2
     
     b1 = y1 - m1 * right_x1
     b2 = y1 - m2 * left_x1
@@ -88,9 +91,19 @@ def lane_callback(msg, args):
     if m1 == m2:
         return None  # 평행한 경우 교점이 없음
     
-    #목표 지점의 x,y좌표
-    x_intersect = (b2 - b1) / (m1 - m2)
-    y_intersect = m1 * x_intersect + b1
+    x_intersect = (b2 - b1) / (m1 - m2) #목표지점의 x좌표
+
+    if (car_controller.last_m1==0) and (car_controller.last.m2==0) and (car_controller.last_x_intersect==0): #맨 처음 실행할 때의 조건임.
+        car_controller.last_x_intersect = x_intersect
+        car_controller.last_m1 = m1
+        car_controller.last_m2 = m2
+    elif (abs(m1 - car_controller.last_m1) < 1.5) and (abs(m2 / car_controller.last_m2) < 1.5): #두 직선의 기울기 변화가 1.5보다 작은 경우
+        car_controller.last_x_intersect = x_intersect
+        car_controller.last_m1 = m1
+        car_controller.last_m2 = m2
+    else: #두 직선의 기울기 변화가 심한 경우, 값이 튄 것으로 판단함.
+        x_intersect = car_controller.last_x_intersect #값이 튀면 이전에 구해둔 x_intersect값을 활용함.
+
 
     dt = 0.1  # 가정된 시간 간격, 실제로는 rospy.Time 사용해서 계산
 

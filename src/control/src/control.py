@@ -59,7 +59,7 @@ class CarController:
             if w1 * w2 < 0:  #정방향 or 약간 틀어진 방향
                 w1 = -w1
                 angle = np.arctan(np.abs(math.tan(w1) - math.tan(w2)) / (1 + math.tan(w1)*math.tan(w2)))
-                theta = matching(angle, 0, np.pi/2, 0, 10)
+                theta = CarController.matching(angle, 0, np.pi/2, 0, 10)
             elif w1 * w2 > 0:  #극한으로 틀어진 방향
                 if w1 > w2:
                     theta = 0
@@ -71,7 +71,7 @@ class CarController:
             if w1 * w2 < 0:  #정방향 or 약간 틀어진 방향
                 w1 = -w1
                 angle = np.arctan(np.abs(math.tan(w1) - math.tan(w2)) / (1 + math.tan(w1)*math.tan(w2)))
-                theta = matching(angle, 0, np.pi/2, 0, -10)
+                theta = CarController.matching(angle, 0, np.pi/2, 0, -10)
             elif w1 * w2 > 0:  #극한으로 틀어진 방향
                 if w1 > w2:
                     theta = 0
@@ -92,10 +92,10 @@ class CarController:
         diff = standard_x - x 
         if diff > 0:   #좌회전
             #theta = np.arctan(diff/(HEIGHT - y))
-            theta = matching(diff, 0, -WIDTH/2, 0, -10)
+            theta = CarController.matching(diff, 0, -WIDTH/2, 0, -10)
         elif diff < 0: #우회전
             #theta = np.arctan(np.abs(diff)/(HEIGHT - y))
-            theta = matching(diff, 0, WIDTH/2, 0, 10)
+            theta = CarController.matching(diff, 0, WIDTH/2, 0, 10)
         else:
             theta = 0
         return theta
@@ -120,15 +120,15 @@ class CarController:
             
             if np.isnan(cross_x)!=True and np.isnan(cross_y)!=True:
 
-                if -5 < steering_theta(left_calculated_weight, right_calculated_weight) < 5:
-                    print('소실점 조향 서보모터 각도: ', steering_vanishing_point(cross_x))
+                if -5 < CarController.steering_theta(left_calculated_weight, right_calculated_weight) < 5:
+                    print('소실점 조향 서보모터 각도: ', CarController.steering_vanishing_point(cross_x))
 
-                    steering_angle = steering_vanishing_point(cross_x)
+                    steering_angle = CarController.steering_vanishing_point(cross_x)
 
                 else:
-                    print("기울기 조향 서보모터 각도: ", steering_theta(left_calculated_weight, right_calculated_weight))
+                    print("기울기 조향 서보모터 각도: ", CarController.steering_theta(left_calculated_weight, right_calculated_weight))
 
-                    steering_angle = steering_theta(left_calculated_weight, right_calculated_weight)
+                    steering_angle = CarController.steering_theta(left_calculated_weight, right_calculated_weight)
         return steering_angle
 
     def control_speed(self, steering_angle): #속도 제어 함수, 나중에 수정할 것.
@@ -154,16 +154,16 @@ def image_callback(msg, args):
     # 목표 지점과 현재 위치의 차이를 계산 (여기서는 단순히 가정) --> 좌표 오차를 각도 오차로 변환해야함
     # 목표 지점의 x 좌표를 거리 오차로 사용
     
-    dt = 0.1  # 가정된 시간 간격, 실제로는 rospy.Time 사용해서 계산
+    dt = 0.001  # 가정된 시간 간격, 실제로는 rospy.Time 사용해서 계산
 
     theta = car_controller.steering_calcu(msg.x)
     # PID 제어를 통해 각도 계산
-    angle = car_controller.compute(theta, dt)
-    speed = 5 #car_controller.control_speed(angle) #속도 제어 부분은 나중에 수정할 것
+    #angle = car_controller.compute(theta, dt)
+    speed = 0.000001 #car_controller.control_speed(angle) #속도 제어 부분은 나중에 수정할 것
     
     # 각도와 속도를 퍼블리시
     msg = xycar_motor()
-    msg.angle = angle
+    msg.angle = theta
     msg.speed = speed
     motor.publish(msg)
 

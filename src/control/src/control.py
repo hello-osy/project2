@@ -74,35 +74,48 @@ class CarController:
 
         return speed
 
-#PID_controller = CarController(kp=3, ki=0.8, kd=0.7)
 
 def lane_callback(msg, args):
     car_controller, motor = args
 
     #[right_x1, right_x2, left_x1, left_x2, y1, y2] 형태의 메시지임.
-    right_x1, right_x2, left_x1, left_x2, y1, y2= msg[0],msg[1],msg[2],msg[3],msg[4],msg[5]
-    m1 = (y2 - y1) / (right_x2 - right_x1) #오른쪽 직선의 기울기 m1
-    m2 = (y2 - y1) / (left_x2 - left_x1) #왼쪽 직선의 기울기 m2
+    right_x1, right_x2, left_x1, left_x2, y1, y2= msg.data
+    #print(msg.data)
+    m1,m2=0,0
+    if (right_x1==right_x2):
+        m1 = car_controller.last_m1
+    else:
+        m1 = (y2 - y1) / (right_x2 - right_x1) #오른쪽 직선의 기울기 m1
+
+    if (left_x1==left_x2):
+        m2 = car_controller.last_m2
+    else:
+        m2 = (y2 - y1) / (left_x2 - left_x1) #왼쪽 직선의 기울기 m2
+
+    #m1 = (y2 - y1) / (right_x2 - right_x1) #오른쪽 직선의 기울기 m1
+    #m2 = (y2 - y1) / (left_x2 - left_x1) #왼쪽 직선의 기울기 m2
     
     b1 = y1 - m1 * right_x1
     b2 = y1 - m2 * left_x1
     
     if m1 == m2:
-        return None  # 평행한 경우 교점이 없음
+        #return None  # 평행한 경우 교점이 없음
+        x_intersect=car_controller.last_x_intersect
     
     x_intersect = (b2 - b1) / (m1 - m2) #목표지점의 x좌표
 
-    if (car_controller.last_m1==0) and (car_controller.last.m2==0) and (car_controller.last_x_intersect==0): #맨 처음 실행할 때의 조건임.
+    if (car_controller.last_m1==0) and (car_controller.last_m2==0) and (car_controller.last_x_intersect==0): #맨 처음 실행할 때의 조건임.
         car_controller.last_x_intersect = x_intersect
         car_controller.last_m1 = m1
         car_controller.last_m2 = m2
-    elif (abs(m1 - car_controller.last_m1) < 1.5) and (abs(m2 / car_controller.last_m2) < 1.5): #두 직선의 기울기 변화가 1.5보다 작은 경우
+    elif (abs(m1 - car_controller.last_m1) < 0.2) and (abs(m2 / car_controller.last_m2) < 0.2): #두 직선의 기울기 변화가 0.2보다 작은 경우
         car_controller.last_x_intersect = x_intersect
         car_controller.last_m1 = m1
         car_controller.last_m2 = m2
     else: #두 직선의 기울기 변화가 심한 경우, 값이 튄 것으로 판단함.
         x_intersect = car_controller.last_x_intersect #값이 튀면 이전에 구해둔 x_intersect값을 활용함.
 
+    print(car_controller.last_m1, car_controller.last_m2, car_controller.last_x_intersect)
 
     dt = 0.1  # 가정된 시간 간격, 실제로는 rospy.Time 사용해서 계산
 

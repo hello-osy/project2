@@ -23,9 +23,6 @@ class CarController:
         self.last_error = 0
         self.speed = 0
         self.angle = 0
-        self.last_m1 = 0
-        self.last_m2 = 0
-        self.last_x_intersect = 0
         self.drive_mode =False
 
     def compute(self, error, dt):
@@ -37,8 +34,8 @@ class CarController:
 
     def start_green(self, msg, args):
         car_controller, motor = args
-        rospy.loginfo("green accepted")
-        if self.drive_mode==False: #초기 1회만 실행하도록 했음. 
+        if self.drive_mode==False: #초기 1회만 실행하도록 했음.
+            rospy.loginfo("green accepted") 
             self.speed = 0.3  #초기 속도 설정
             self.angle = 0
             self.drive_mode=True
@@ -142,7 +139,7 @@ def lane_callback(msg, args):
 
     theta = car_controller.steering_calcu(msg.data) # msg.data 넣어야 함. 그냥 msg에는 다른 정보도 들어있음.
     # angle = car_controller.compute(theta, dt)
-    speed = 0.1 # car_controller.control_speed(angle) # 속도 제어 부분은 나중에 수정할 것
+    speed = 0.2 # car_controller.control_speed(angle) # 속도 제어 부분은 나중에 수정할 것
     
     # 각도와 속도를 퍼블리시
     if car_controller.drive_mode == True:

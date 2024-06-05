@@ -38,13 +38,14 @@ class CarController:
     def start_green(self, msg, args):
         car_controller, motor = args
         rospy.loginfo("green accepted")
-        self.speed = 0.3  # 녹색 신호일 때 속도 설정
-        self.angle = 0
-        self.drive_mode=True
-        publish_msg = xycar_motor()
-        publish_msg.angle = self.angle
-        publish_msg.speed = self.speed
-        motor.publish(publish_msg)
+        if self.drive_mode==False: #초기 1회만 실행하도록 했음. 
+            self.speed = 0.3  #초기 속도 설정
+            self.angle = 0
+            self.drive_mode=True
+            publish_msg = xycar_motor()
+            publish_msg.angle = self.angle
+            publish_msg.speed = self.speed
+            motor.publish(publish_msg)
 
     def set_velocity(self, msg):
         self.speed = msg.data  # 현재 속도 업데이트

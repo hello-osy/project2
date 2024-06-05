@@ -3,7 +3,6 @@
 import rospy
 from std_msgs.msg import Bool, Float64, Float32MultiArray
 from xycar_msgs.msg import xycar_motor
-#from image_fuse_msgs.msg import Point
 import signal
 import time
 
@@ -24,6 +23,7 @@ class CarController:
         self.last_error = 0
         self.speed = 0
         self.angle = 0
+        self.drive_mode =False
 
     def compute(self, error, dt):
         """PID 제어 계산을 수행하고 조정된 제어 값을 반환."""
@@ -34,141 +34,130 @@ class CarController:
 
     def start_green(self, msg, args):
         car_controller, motor = args
-        rospy.loginfo("green accepted")
-        self.speed = 0.3  # 녹색 신호일 때 속도 설정
-        self.angle = 0
-        msg = xycar_motor()
-        msg.angle = self.angle
-        msg.speed = self.speed
-        motor.publish(msg) 
-    
-        
+        if self.drive_mode==False: #초기 1회만 실행하도록 했음.
+            rospy.loginfo("green accepted") 
+            self.speed = 0.3  #초기 속도 설정
+            self.angle = 0
+            self.drive_mode=True
+            publish_msg = xycar_motor()
+            publish_msg.angle = self.angle
+            publish_msg.speed = self.speed
+            motor.publish(publish_msg)
+
     def set_velocity(self, msg):
         self.speed = msg.data  # 현재 속도 업데이트
 
     def set_orientation(self, msg):
         self.angle = msg.data  # 현재 조향 업데이트
 
+    def matching(self, x, input_min, input_max, output_min, output_max):
+        return (x - input_min) * (output_max - output_min) / (input_max - input_min) + output_min # map() 함수 정의.
+
+    def car_position(self, list): # 차체 위치 에러
+        x1, y1, x2, y2, x3, y3, x4, y4 = list
+        center_line = (x1 + x3) / 2
+        error = (WIDTH / 2) - center_line
+        return error
+
     def steering_vanishing_point(self, x):
-        standard_x = int(WIDTH/2)
+        standard_x = int(WIDTH / 2)
         diff = standard_x - x 
-        if diff > 0:   #좌회전
-            theta = self.matching(diff, 0, WIDTH/2, 90, 45)
+        if diff > 0:   # 좌회전
+            theta = self.matching(diff, 0, -WIDTH / 2, 0, -10)
         elif diff < 0:
-            theta = self.matching(diff, 0, -WIDTH/2, 90, 135)
+            theta = self.matching(diff, 0, WIDTH / 2, 0, 10)
+        else:
+            theta = 0
 
         return theta
 
-    def matching(self, x, input_min, input_max, output_min, output_max):
-        return (x-input_min)*(output_max-output_min)/(input_max-input_min)+output_min #map()함수 정의.
+    def steering_theta(self, w1, w2): # 차선 기울기 기준 조향
+        if np.abs(w1) > np.abs(w2):  # 우회전
+            if w1 * w2 < 0:  # 정방향 or 약간 틀어진 방향
+                w1 = -w1
+                angle = np.arctan(np.abs(math.tan(w1) - math.tan(w2)) / (1 + math.tan(w1) * math.tan(w2)))
+                theta = self.matching(angle, 0, np.pi / 2, 0, 10)
+            elif w1 * w2 > 0:  # 극한으로 틀어진 방향
+                if w1 > w2:
+                    theta = 0
+                else:
+                    theta = 0
+            else:
+                theta = 0
+        elif np.abs(w1) < np.abs(w2):  # 좌회전
+            if w1 * w2 < 0:  # 정방향 or 약간 틀어진 방향
+                w1 = -w1
+                angle = np.arctan(np.abs(math.tan(w1) - math.tan(w2)) / (1 + math.tan(w1) * math.tan(w2)))
+                theta = self.matching(angle, 0, np.pi / 2, 0, -10)
+            elif w1 * w2 > 0:  # 극한으로 틀어진 방향
+                if w1 > w2:
+                    theta = 0
+                else:
+                    theta = 0
+            else:
+                theta = 0
+        else:
+            theta = 0
 
-    def control_speed(self, steering_angle): #속도 제어 함수, 나중에 수정할 것.
-        #조향각이 커지면 속도를 좀 줄이고, 조향각이 작아지면 속도를 좀 빠르게 해주자.
-        #비례적으로 속도를 조절합니다
+        return theta
 
-        max_speed=50 #이건 우리 마음대로
-        min_speed=20
+    def steering_calcu(self, input_data): # 조향값 도출
+        x1, y1, x2, y2, x3, y3, x4, y4 = input_data
 
-        speed = max_speed - (max_speed - min_speed) * (abs(steering_angle - 90) / 90.0)
+        # 분모가 0인 경우를 예외 처리
+        if x1 == x2 and x3 == x4:
+            return None  # 두 점이 같은 x 좌표를 가지면 기울기가 무한대가 되므로 None을 반환
+        else:
+            # 기울기 계산
+            left_calculated_weight = (y1 - y2) / (x2 - x1)
+            right_calculated_weight = (y3 - y4) / (x4 - x3)
 
-        return speed
+            # 절편 계산
+            left_calculated_bias = y1 - left_calculated_weight * x1
+            right_calculated_bias = y3 - right_calculated_weight * x3
 
-#PID_controller = CarController(kp=3, ki=0.8, kd=0.7)
+            cross_x = (left_calculated_bias - right_calculated_bias) / (right_calculated_weight - left_calculated_weight)
+            cross_y = left_calculated_weight * ((left_calculated_bias - right_calculated_bias) / (right_calculated_weight - left_calculated_weight)) + right_calculated_bias
+            
+            if not np.isnan(cross_x) and not np.isnan(cross_y):
+                if -5 < self.steering_theta(left_calculated_weight, right_calculated_weight) < 5:
+                    print('소실점 조향 서보모터 각도: ', self.steering_vanishing_point(cross_x))
+                    steering_angle = self.steering_vanishing_point(cross_x)
+                else:
+                    print("기울기 조향 서보모터 각도: ", self.steering_theta(left_calculated_weight, right_calculated_weight))
+                    steering_angle = self.steering_theta(left_calculated_weight, right_calculated_weight)
+            
+        return steering_angle
 
 def lane_callback(msg, args):
-    print(msg.data)
     car_controller, motor = args
 
-    #[right_x1, right_x2, left_x1, left_x2, y1, y2] 형태의 메시지임.
-    right_x1, right_x2, left_x1, left_x2, y1, y2= msg.data
-    #print(msg.data)
-    m1,m2=0,0
-    if (right_x1==right_x2):
-        m1 = car_controller.last_m1
-    else:
-        m1 = (y2 - y1) / (right_x2 - right_x1) #오른쪽 직선의 기울기 m1
-
-    if (left_x1==left_x2):
-        m2 = car_controller.last_m2
-    else:
-        m2 = (y2 - y1) / (left_x2 - left_x1) #왼쪽 직선의 기울기 m2
-
-    #m1 = (y2 - y1) / (right_x2 - right_x1) #오른쪽 직선의 기울기 m1
-    #m2 = (y2 - y1) / (left_x2 - left_x1) #왼쪽 직선의 기울기 m2
+    # 목표 지점과 현재 위치의 차이를 계산 (여기서는 단순히 가정) --> 좌표 오차를 각도 오차로 변환해야함
+    # 목표 지점의 x 좌표를 거리 오차로 사용
     
-    b1 = y1 - m1 * right_x1
-    b2 = y1 - m2 * left_x1
-    
-    if m1 == m2:
-        #return None  # 평행한 경우 교점이 없음
-        x_intersect=car_controller.last_x_intersect
-    
-    x_intersect = (b2 - b1) / (m1 - m2) #목표지점의 x좌표
+    dt = 0.001  # 가정된 시간 간격, 실제로는 rospy.Time 사용해서 계산
 
-    if (car_controller.last_m1==0) and (car_controller.last_m2==0) and (car_controller.last_x_intersect==0): #맨 처음 실행할 때의 조건임.
-        car_controller.last_x_intersect = x_intersect
-        car_controller.last_m1 = m1
-        car_controller.last_m2 = m2
-    elif (abs(m1 - car_controller.last_m1) < 0.2) and (abs(m2 / car_controller.last_m2) < 0.2): #두 직선의 기울기 변화가 0.2보다 작은 경우
-        car_controller.last_x_intersect = x_intersect
-        car_controller.last_m1 = m1
-        car_controller.last_m2 = m2
-    else: #두 직선의 기울기 변화가 심한 경우, 값이 튄 것으로 판단함.
-        x_intersect = car_controller.last_x_intersect #값이 튀면 이전에 구해둔 x_intersect값을 활용함.
-
-    print(car_controller.last_m1, car_controller.last_m2, car_controller.last_x_intersect)
-
-    dt = 0.1  # 가정된 시간 간격, 실제로는 rospy.Time 사용해서 계산
-
-    theta = car_controller.steering_vanishing_point(x_intersect) #좌표 오차를 각도 오차로 변환함 
-    # PID 제어를 통해 각도 계산
-    angle = car_controller.compute(theta, dt)
-    speed = car_controller.control_speed(angle) #속도 제어 부분은 나중에 수정할 것
+    theta = car_controller.steering_calcu(msg.data) # msg.data 넣어야 함. 그냥 msg에는 다른 정보도 들어있음.
+    # angle = car_controller.compute(theta, dt)
+    speed = 0.2 # car_controller.control_speed(angle) # 속도 제어 부분은 나중에 수정할 것
     
     # 각도와 속도를 퍼블리시
-    publish_msg = xycar_motor()
-    publish_msg.angle = angle
-    publish_msg.speed = speed
-    motor.publish(publish_msg)
-
-def matching(x, input_min, input_max, output_min, output_max):  #x가 input_min과 input_max 사이에 있다면, 이를 output_min과 output_max 사이의 값으로 매핑합니다.
-    return (x-input_min)*(output_max-output_min)/(input_max-input_min)+output_min #map()함수 정의.
+    if car_controller.drive_mode == True:
+        publish_msg = xycar_motor()
+        publish_msg.angle = theta
+        publish_msg.speed = speed
+        motor.publish(publish_msg)
 
 def main():
     rospy.init_node('control', anonymous=True)
     
-    car_controller=CarController(kp=3, ki=0.8, kd=0.7)
+    car_controller = CarController(kp=3, ki=0.8, kd=0.7)
     # 토픽 이름, 메시지 타입, 메시지 큐 크기
     motor = rospy.Publisher('/xycar_motor', xycar_motor, queue_size=1)
-    
-    rate = rospy.Rate(10)
-    start_time = rospy.get_time()  # 노드가 시작된 시간을 기록합니다.
-    while not  rospy.is_shutdown():
-        motor_msg = xycar_motor()
-        current_time = rospy.get_time()
-        elapsed_time = current_time - start_time
-        # print(elapsed_time)
-        if 12 > elapsed_time >= 8:
-            motor_msg.angle = -0.03
-            motor_msg.speed = 0.5
-        elif 18 > elapsed_time >= 14:
-            motor_msg.angle = 0.017
-            motor_msg.speed = 0.4
-        elif 35 > elapsed_time > 20:
-            motor_msg.angle = 0.0
-            motor_msg.speed = 0.8
-        elif elapsed_time > 35:
-            motor_msg.angle = -0.01
-            motor_msg.speed = 0.0
-        else:
-            motor_msg.angle = 0
-            motor_msg.speed = 0
-        motor.publish(motor_msg)
-        rate.sleep()
+
     # 토픽 이름, 메시지 타입, 콜백 함수
-    
     rospy.Subscriber('/lane_detector', Float32MultiArray, lane_callback, (car_controller, motor))
-    # rospy.Subscriber('/green_light', Bool, car_controller.start_green, (car_controller, motor))
+    rospy.Subscriber('/green_light', Bool, car_controller.start_green, (car_controller, motor))
     rospy.Subscriber('/velocity', Float64, car_controller.set_velocity)
     rospy.Subscriber('/orientation', Float64, car_controller.set_orientation)
 

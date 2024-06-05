@@ -26,6 +26,7 @@ class CarController:
         self.last_m1 = 0
         self.last_m2 = 0
         self.last_x_intersect = 0
+        self.drive_mode =False
 
     def compute(self, error, dt):
         """PID 제어 계산을 수행하고 조정된 제어 값을 반환."""
@@ -39,6 +40,7 @@ class CarController:
         rospy.loginfo("green accepted")
         self.speed = 0.3  # 녹색 신호일 때 속도 설정
         self.angle = 0
+        self.drive_mode=True
         publish_msg = xycar_motor()
         publish_msg.angle = self.angle
         publish_msg.speed = self.speed
@@ -142,10 +144,11 @@ def lane_callback(msg, args):
     speed = 0.1 # car_controller.control_speed(angle) # 속도 제어 부분은 나중에 수정할 것
     
     # 각도와 속도를 퍼블리시
-    publish_msg = xycar_motor()
-    publish_msg.angle = theta
-    publish_msg.speed = speed
-    motor.publish(publish_msg)
+    if car_controller.drive_mode == True:
+        publish_msg = xycar_motor()
+        publish_msg.angle = theta
+        publish_msg.speed = speed
+        motor.publish(publish_msg)
 
 def main():
     rospy.init_node('control', anonymous=True)

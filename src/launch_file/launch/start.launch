@@ -1,4 +1,8 @@
-<launch>
+<!-- 두 개중 되는 걸로 선택해서 launch, IP 바꿔야함-->
+
+
+<!-- 1번 -->
+<!-- <launch>
     <node name="carla_ctl" pkg="carla_ctl" type="carla_ctl" output="screen">
         <param name="_camera_sensor_x" value="0.0"/>
         <param name="_camera_sensor_y" value="1.8"/>
@@ -6,8 +10,27 @@
         <param name="_lidar_sensor_x" value="0.0"/>
         <param name="_lidar_sensor_y" value="2.4"/>
         <param name="_lidar_sensor_z" value="0.3"/>
-        <param name="_host" value="172.19.32.1"/>
+        <param name="_host" value="172.18.112.1"/>
         <param name="_rule_sensor_on" value="0"/>
     </node>
+    
     <node name="linear_velocity_visualize" pkg="imu_fuse" type="linear_velocity_visualize.py" output="screen" />
+
+    <node name="traffic_lights" pkg="image_fuse" type="traffic_lights.py" output="screen" />  
+    <node name="lane_detector" pkg="image_fuse" type="lane_detector.py" output="screen" />
+
+    <node name="control" pkg="control" type="traffic_lights.py" output="screen" />
+</launch> -->
+
+<!-- 2번 -->
+<launch>
+    <node name="carla_ctl" pkg="carla_ctl" type="carla_ctl" output="screen"
+          args="_camera_sensor_x:=0 _camera_sensor_y:=1.8 _camera_sensor_z:=2.2 _lidar_sensor_x:=0 _lidar_sensor_y:=2.6 _lidar_sensor_z:=0.2 _host:=172.25.144.1 _port:=2000 _rule_sensor_on:=0" />
+    
+    <node name="linear_velocity_visualize" pkg="imu_fuse" type="linear_velocity_visualize.py" output="screen" />
+
+    <node name="traffic_lights" pkg="image_fuse" type="traffic_lights.py" output="screen" />  
+    <node name="lane_detector" pkg="image_fuse" type="lane_detector.py" output="screen" />
+
+    <node name="control" pkg="control" type="control.py" output="screen" />
 </launch>

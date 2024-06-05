@@ -106,7 +106,7 @@ class RoadLaneDetector:
         white_image = cv2.bitwise_and(img_frame, img_frame, mask=edged_mask)
 
         # 이거 나중에 지울 것
-        # cv2.imshow("white_filtered", white_image)
+        cv2.imshow("white_filtered", white_image)
 
         return white_image
 
@@ -141,8 +141,8 @@ class RoadLaneDetector:
 
         region_limited_image = cv2.bitwise_and(img_edges, mask)
         # 이거 나중에 지울 것
-        # cv2.imshow("mask_region", mask)
-        # cv2.imshow("region_limited", region_limited_image)
+        cv2.imshow("mask_region", mask)
+        cv2.imshow("region_limited", region_limited_image)
         return region_limited_image
 
     def hough_lines(self, img_mask):

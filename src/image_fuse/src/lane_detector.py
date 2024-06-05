@@ -131,8 +131,8 @@ class RoadLaneDetector:
         # 중간 부분 지울 부분의 영역
         lower_left = (100, width)
         upper_left = (width/2-100, height * 2 // 3)
-        upper_right = (width/2+100, height * 2 // 3)
-        lower_right = (700, width)
+        upper_right = (width/2+50, height * 2 // 3)
+        lower_right = (650, width)
         erase_points = np.array([[lower_left, upper_left, upper_right, lower_right]], dtype=np.int32)
         
         cv2.fillPoly(mask, square, 255)
@@ -141,8 +141,8 @@ class RoadLaneDetector:
 
         region_limited_image = cv2.bitwise_and(img_edges, mask)
         # 이거 나중에 지울 것
-        # cv2.imshow("mask_region", mask)
-        # cv2.imshow("region_limited", region_limited_image)
+        cv2.imshow("mask_region", mask)
+        cv2.imshow("region_limited", region_limited_image)
         return region_limited_image
 
     def hough_lines(self, img_mask):
@@ -276,11 +276,11 @@ def image_callback(msg, args):
         img_edges = cv2.Canny(img_gray, 50, 150)
         img_mask = road_lane_detector.limit_region(img_edges)
         lines = road_lane_detector.hough_lines(img_mask)
-
+        
         if lines is not None:
             separated_lines = road_lane_detector.separate_lines(img_mask, lines)
             lane = road_lane_detector.regression(separated_lines, cv_image)
-            
+            print(lane)
             # line1 = [(800,480), (530,350)]  # 우측 차선 바깥 경계
             # line2 = [(710,600),(452,360)]    # 중앙선 우측 경계
             # line3 = [(50,600),(280,364)]     # 중앙선 좌측 경계

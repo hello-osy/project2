@@ -121,10 +121,10 @@ class CarController:
             
             if not np.isnan(cross_x) and not np.isnan(cross_y):
                 if -5 < self.steering_theta(left_calculated_weight, right_calculated_weight) < 5:
-                    print('소실점 조향 서보모터 각도: ', self.steering_vanishing_point(cross_x))
+                    # print('소실점 조향 서보모터 각도: ', self.steering_vanishing_point(cross_x))
                     steering_angle = self.steering_vanishing_point(cross_x)
                 else:
-                    print("기울기 조향 서보모터 각도: ", self.steering_theta(left_calculated_weight, right_calculated_weight))
+                    # print("기울기 조향 서보모터 각도: ", self.steering_theta(left_calculated_weight, right_calculated_weight))
                     steering_angle = self.steering_theta(left_calculated_weight, right_calculated_weight)
             
         return steering_angle

@@ -31,6 +31,8 @@
 
     <node name="traffic_lights" pkg="image_fuse" type="traffic_lights.py" output="screen" />  
     <node name="lane_detector" pkg="image_fuse" type="lane_detector.py" output="screen" />
+    <!--node name="Lidar" pkg="image_fuse" type="traffic_lights_visualize.py" output="screen" /-->
 
     <node name="control" pkg="control" type="control.py" output="screen" />
+
 </launch>

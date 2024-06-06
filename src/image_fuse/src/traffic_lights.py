@@ -40,7 +40,7 @@ def image_callback(msg):
         # 초록불 검출 (초록색 픽셀이 100개 이상일 때만)
         green_pixel_count = cv2.countNonZero(green_mask)
         if green_pixel_count > 100:  # 임계값을 100으로 설정
-            rospy.loginfo(f"Green light detected with {green_pixel_count} green pixels.")
+            # rospy.loginfo(f"Green light detected with {green_pixel_count} green pixels.")
             publish_green_light()
 
         # 디버깅 목적으로 주기적으로만 이미지 표시

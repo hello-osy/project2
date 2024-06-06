@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import rospy
+from std_msgs.msg import Float64
 from sensor_msgs.msg import Imu
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,7 +11,8 @@ import time
 initial_time = None
 initial_accel_x = None
 initial_accel_y = None
-
+accel_x = 0
+accel_y = 0
 # 마지막 시간과 속도
 last_time = 0
 last_vel_x = 0
@@ -20,11 +22,12 @@ last_vel_y = 0
 current_vel_x = 0
 current_vel_y = 0
 
+
 # 속도가 마지막으로 갱신된 시간
 last_update_time = 0
 reset_last_update_time = 0
 reset_current_update_time = 0 
-time_threshold = 0.5  # 속도가 변하지 않는 시간을 확인하는 임계값 (초 단위)
+time_threshold = 2  # 속도가 변하지 않는 시간을 확인하는 임계값 (초 단위)
 
 # 가속도를 적분하여 속도를 계산하는 함수
 def integrate_acceleration(accel, time):
@@ -34,13 +37,16 @@ def integrate_acceleration(accel, time):
     dt = time - last_time
 
     # 속도 계산 (적분)
+
     new_vel_x = last_vel_x + accel[0] * dt
     new_vel_y = last_vel_y + accel[1] * dt
-
+    
+    # print("new_vel_x : ", new_vel_x, "  last_vel_x :", last_vel_x, "  accel :", accel)
+    
     # 속도의 차이가 0.1 넘을 때 리셋 타임 초기화(속도 0으로 초기화용)
     # print(new_vel_x - last_vel_x)
     # print(rospy.get_time())
-    if abs(new_vel_x - last_vel_x) > 0.05:
+    if abs(new_vel_x - last_vel_x) > 0.0005:
         reset_last_update_time = rospy.get_time()
         
     # 새로운 시간과 속도 저장
@@ -52,6 +58,13 @@ def integrate_acceleration(accel, time):
     current_vel_x = new_vel_x
     current_vel_y = new_vel_y
 
+    # 속도 퍼블리싱
+    # print("current_vel_x :", current_vel_x)
+    control = rospy.Publisher('/velocity', Float64, queue_size=1)
+    control_msg = Float64()
+    control_msg.data = current_vel_x
+    control.publish(control_msg)
+    
     # 속도가 갱신된 시간 업데이트
     last_update_time = rospy.get_time()
     
@@ -67,10 +80,11 @@ def imu_callback(data):
         initial_accel_x = data.linear_acceleration.x
         initial_accel_y = data.linear_acceleration.y
         return
-
+    
     accel_x = data.linear_acceleration.x - initial_accel_x
     accel_y = data.linear_acceleration.y - initial_accel_y
-    # print(data.linear_acceleration.x)
+    if abs(accel_x) > 100:
+        accel_x = 0
 
     integrate_acceleration([accel_x, accel_y], current_time - initial_time)
 
@@ -107,7 +121,7 @@ def main():
     rospy.Subscriber('/imu', Imu, imu_callback)
 
     # 그래프 업데이트를 위한 함수 호출
-    update_plot()
+    # update_plot()
 
     rospy.spin()
 

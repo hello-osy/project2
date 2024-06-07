@@ -36,6 +36,7 @@ class RoadLaneDetector:
         # cv2.namedWindow('HSV Image')
         # cv2.setMouseCallback('HSV Image', on_mouse, img_hsv)
         # cv2.imshow("HSV Image",img_hsv)
+        
         # # 블러처리 후 경계 추출
         blurred_image = cv2.GaussianBlur(img_hsv, (5, 5), 0)
         # cv2.imshow("blurred_image",blurred_image)
@@ -290,10 +291,7 @@ def image_callback(msg, args):
         if lines is not None:
             separated_lines = road_lane_detector.separate_lines(img_mask, lines)
             lane = road_lane_detector.regression(separated_lines, cv_image)
-            # print(lane)
-            # line1 = [(800,480), (530,350)]  # 우측 차선 바깥 경계
-            # line2 = [(710,600),(452,360)]    # 중앙선 우측 경계
-            # line3 = [(50,600),(280,364)]     # 중앙선 좌측 경계
+
             # lane.extend(line1+line2+line3)
             # print(lane)
             img_result = road_lane_detector.draw_line(cv_image, lane)

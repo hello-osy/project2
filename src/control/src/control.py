@@ -16,8 +16,8 @@ WIDTH = 800
 LEGTH = 600
 W_MIN = 0.00001 # 최소 조향
 W_MAX = 0.23 # 최대 조향 
-S_MIN = 0.5 # 최소 속도
-S_MAX = 0.68 # 최대 속도
+S_MIN = 0.48 # 최소 속도
+S_MAX = 0.65 # 최대 속도
 class CarController:
     def __init__(self, kp, ki, kd):
         self.kp = kp
@@ -87,12 +87,6 @@ class CarController:
     def steering_vanishing_point(self, x):
         standard_x = int(WIDTH / 2)
         diff = standard_x - x 
-        # if diff > 0:   # 좌회전
-        #     theta = self.matching(diff, 0, -WIDTH / 2, 0, -10)
-        # elif diff < 0:
-        #     theta = self.matching(diff, 0, WIDTH / 2, 0, 10)
-        # else:
-        #     theta = 0
         return diff
 
     def steering_theta(self, w1, w2): # 차선 기울기 기준 조향
@@ -207,36 +201,8 @@ class CarController:
         if x1 == x2 and x3 == x4:
             return -1, -1  # 두 점이 같은 x 좌표를 가지면 기울기가 무한대가 되므로 None을 반환
         else:
-            # 기울기 계산
-            # left_calculated_weight = (y2 - y1) / (x2 - x1)
-            # right_calculated_weight = (y4 - y3) / (x4 - x3)
-            # # print("left_calculated_weight: ", left_calculated_weight)
-            # # print("right_calculated_weight :", right_calculated_weight)
-            # # 절편 계산
-            # left_calculated_bias = y1 - left_calculated_weight * x1
-            # # print("left_calculated_bias :", left_calculated_bias)
-            # right_calculated_bias = y3 - right_calculated_weight * x3
-            # # print("right_calculated_bias :", right_calculated_bias)
-            # cross_x = (left_calculated_bias - right_calculated_bias) / (right_calculated_weight - left_calculated_weight)
-            # cross_y = left_calculated_weight * ((right_calculated_bias - left_calculated_bias) / (left_calculated_weight - right_calculated_weight)) + left_calculated_bias
-            # print("cross_x :", cross_x)
-            # print("cross_y :", cross_y)
-            # if not np.isnan(cross_x) and not np.isnan(cross_y):
-            #     # steering_angle = self.steering_theta(left_calculated_weight, right_calculated_weight)
-            #     if -5 < self.steering_theta(left_calculated_weight, right_calculated_weight) < 5:
-            #         print('소실점 조향 서보모터 각도: ', self.steering_vanishing_point(cross_x))
-            #         steering_angle = self.steering_vanishing_point(cross_x)
-            #     else:
-            #         print("기울기 조향 서보모터 각도: ", self.steering_theta(left_calculated_weight, right_calculated_weight))
-            #         steering_angle = self.steering_theta(left_calculated_weight, right_calculated_weight)
-            
             if not np.isnan(cross_x) and not np.isnan(cross_y):
-                # print( self.steering_roi_point(cross_x, cross_y))
-                # print("velocity", self.speed)
-                # print("mid:", left_edge)
                 steering_val = -(self.diff_queue(self.steering_roi_point(cross_x, cross_y,left_edge, right_edge)))
-                # print(steering_val)
-                # print(steering_val)
                 normalized_steering_val = self.normalize(abs(steering_val), 0, 210, W_MIN, W_MAX)
                 
                 # 절댓값으로 정규화 했으므로 다시 음수를 조건에 따라 취함
@@ -249,15 +215,7 @@ class CarController:
                     steering_speed = S_MAX
                 else:
                     steering_speed = S_MIN
-                # print(steering_angle)
-                # if -50 < self.steering_vanishing_point(cross_x) < 50:
-                #     print('소실점 조향 서보모터 각도: ', steering_val/450)
-                #     steering_angle = steering_val / 450
-                # else:
-                #     print("기울기 조향 서보모터 각도: ", steering_val/50)
-                #     steering_angle = steering_val / 300
-        # print(steering_angle, steering_speed)
-        # print("오차 :", 400-abs(cross_x))
+
         return steering_angle, steering_speed
 
 
@@ -267,26 +225,12 @@ def lane_callback(msg, args):
     # 목표 지점과 현재 위치의 차이를 계산 (여기서는 단순히 가정) --> 좌표 오차를 각도 오차로 변환해야함
     # 목표 지점의 x 좌표를 거리 오차로 사용
     
-    # dt = 0.001  # 가정된 시간 간격, 실제로는 rospy.Time 사용해서 계산
-    # print("imgage data", msg.data)
-    
+    # 각도와 스피드 값 계산
     theta, speed = car_controller.steering_calcu(msg.data) # msg.data 넣어야 함. 그냥 msg에는 다른 정보도 들어있음.
-    if theta == -1 and speed == -1:
-        pass
+    if theta == -1 and speed == -1: # 수직인 직선에 대한 값
+        pass 
     else:
-        # angle = car_controller.compute(theta, dt)
         elapsed_time = time.time()-car_controller.start_time
-        # print(1, car_controller.start_time)
-        # print(2, time.time())
-        # print(3, elapsed_time)
-        # 각도와 속도를 퍼블리시
-        # print(theta)
-        
-        # if theta < 0:
-        #     theta_final = theta - (speed - 0.2)/10
-        # else:
-        #     theta_final = theta + (speed - 0.2)/10
-        # print(theta)
 
         if car_controller.drive_mode == True:
             publish_msg = xycar_motor()
@@ -296,11 +240,8 @@ def lane_callback(msg, args):
             else:
                 publish_msg.angle = theta
                 publish_msg.speed = speed
-            print("theta :", theta, "\n", "speed :", speed)
-            
-            
+            # print("theta :", theta, "\n", "speed :", speed)
             motor.publish(publish_msg)
-
         else:
             car_controller.start_time = time.time()
 

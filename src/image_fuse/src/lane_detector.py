@@ -29,7 +29,7 @@ class RoadLaneDetector:
                 h, s, v = hsv_image[y, x]
                 print(f"HSV: ({h}, {s}, {v})")
                 
-        cv2.imshow("CAMERA",img_frame)
+        # cv2.imshow("CAMERA",img_frame)
         img_hsv = cv2.cvtColor(img_frame, cv2.COLOR_BGR2HSV)
         
         # hsv 마우스 올리면 값이 터미널에 출력
@@ -152,7 +152,7 @@ class RoadLaneDetector:
         region_limited_image = cv2.bitwise_and(img_edges, mask)
         # 이거 나중에 지울 것
         # cv2.imshow("mask_region", mask)
-        cv2.imshow("region_limited", region_limited_image)
+        # cv2.imshow("region_limited", region_limited_image)
         return region_limited_image
 
     def hough_lines(self, img_mask):
@@ -308,7 +308,13 @@ def image_callback(msg, args):
                     publishing_lane_data += tmp
                 array_msg.data = publishing_lane_data
                 image_pub.publish(array_msg)
+            else:
+                array_msg.data = [0,0,0,0,0,0,0,0]
+                image_pub.publish(array_msg)
         else:
+            array_msg = Float32MultiArray()
+            array_msg.data = [0,0,0,0,0,0,0,0]
+            image_pub.publish(array_msg)
             img_result = cv_image
 
         #창 이름, 표시할 이미지
